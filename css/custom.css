@@ -1,0 +1,36 @@
+.subunit{
+    fill: darkgreen;
+}
+.place{
+    fill: #000;
+}
+.place .selected{
+    fill: green;
+}
+.boundry{
+    fill: none;
+    stroke: darkgray;
+}
+#map-container{
+    background-color: midnightblue;
+    padding: 0;
+    margin: 0 auto;
+    width: 960px;
+}
+div.container{
+    max-width: 960px;
+}
+.ATA{
+    fill: #fff;
+}
+div.tooltip {	
+    position: absolute;			
+    text-align: center;			
+    width: 300px;													
+    border: 0px;				
+    pointer-events: none;			
+}
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
