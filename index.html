@@ -33,6 +33,8 @@
     </body>
     <script>
         var width = 960, height = 540;
+        var circleRadius = 3;
+        var minCircleRadius = 1;
         var timer; // Stores the timeout function to allow it to be terminated to create next.
         // When a node is clicked, this will display that nodes information. 
         var tooltip = d3.select("#map-container").append("div").attr("class","tooltip panel panel-primary hide");
@@ -42,30 +44,39 @@
         var proj = d3.geo.mercator().scale(150).translate([width/2,height/2]);
         var path = d3.geo.path().projection(proj);
         var zoom = d3.behavior.zoom().scaleExtent(([1,8])).on("zoom", zoomed)
+        // SVG group element to store shapes. 
         var g = svg.append("g");
 
         g.append("rect").attr("class","overlay").attr("width",width).attr("height",height);
         
         svg.call(zoom).call(zoom.event);
 
+        // Processes data inside of world.json file.
         d3.json("./data/world.json", function(error, world){
             if(error) return console.error(error);
-
+            // Contains the shapes of the countries
             var subunits = topojson.feature(world, world.objects.ne_50m_admin_0_map_subunits).features;
+            // Contains the location of the cities, their timezones, countries, etc
             var places = topojson.feature(world, world.objects.ne_50m_populated_places).features;
+            // Contains the boundries of each country
             var boundaries = topojson.mesh(world, world.objects.ne_50m_admin_0_map_subunits, 
                 function(a,b){
                     return a !== b;
                 }
             );
-
+            // Appends the countries to the svg group. 
             g.selectAll(".subunit").data(subunits).enter().append("path").attr("d",path).attr("class", function(d){
+                // adds class of subunit and the country code for each country. 
                 return "subunit " + d.properties.adm0_a3;
             });
+
+            // Appends the boundries for each country. 
             g.append("path").datum(boundaries).attr("d",path).attr("class", "boundry");
 
+            // Adds a node for each country in the dataset.
+            // Adds on click event to display time information. 
             g.selectAll("circle").data(places).enter().append("circle")
-                .attr("r",3)
+                .attr("r",circleRadius)
                 .attr("fill", "#000")
                 .attr("class","place")
                 .attr("cx", function(d) {
@@ -74,6 +85,8 @@
                     return proj(d.geometry.coordinates)[1];
                 }).on('click', function(d){
                     var attrId = $(".tooltip").attr("id");
+                    // Checks if the tooltip is visible, if not displays tooltip.
+                    // Also checks if the tooltip had a previous attribute of the cities coordinates. 
                     if($(".tooltip").hasClass("hide") || (typeof attrId !== undefined && attrId !== false && attrId != (d.geometry.coordinates[0] + d.geometry.coordinates[1])))
                     {
                         $(".tooltip").removeClass("hide");
@@ -102,21 +115,25 @@
 
         function zoomed() {
             g.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-            g.selectAll("circle").attr("r", 3/d3.event.scale > 1 ? 3/d3.event.scale : 1);
+            g.selectAll("circle").attr("r", circleRadius/d3.event.scale > minCircleRadius ? circleRadius/d3.event.scale : minCircleRadius);
             // Prevents the tooltip from remaining on screen. 
             $(".tooltip").addClass("hide");
         }
-        
+
+        // displays and updates the time for a city based on its timezone.        
         function updateTime(timezone){
+            // Trys to get the current timezone to base all other timezones on.
             var currentTz = moment.tz(moment(), moment.tz.guess());
+            // appends the time to the tooltip's span for display. 
             $("#currentTime").text(
                 currentTz.tz(timezone).format("h:mm:ss a")
             );
+            // sets a recursive loop to update the visible time. 
             timer = setTimeout(function(){
                 updateTime(timezone);
             }, 500);
         }
-
+        
         d3.select(self.frameElement).style("height", height + "px");
     </script>  
 </html>
